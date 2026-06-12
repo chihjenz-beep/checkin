@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>平安醫療長期照護體系 · 員工出勤管理系統</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700;900&family=Nunito:wght@400;700;900&display=swap');
+:root{
+  --sea:#006994;--sea2:#0099cc;--sea3:#00bfff;--foam:#e0f7ff;--sand:#fff8e7;
+  --sun:#ffcc02;--sun2:#ff9500;--coral:#ff6b6b;--coral2:#ff4757;
+  --leaf:#2ecc71;--leaf2:#00b894;--sky:#87ceeb;--sky2:#b0e2ff;
+  --surface:rgba(255,255,255,0.18);--surface2:rgba(255,255,255,0.28);
+  --border:rgba(255,255,255,0.35);--text:#1a3a4a;--muted:#5a8a9a;
+  --white:#ffffff;--radius:18px;--shadow:0 8px 32px rgba(0,105,148,.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+
+body{
+  min-height:100vh;overflow-x:hidden;
+  font-family:'Noto Serif TC',serif;color:var(--text);
+  background: linear-gradient(160deg,#0099cc 0%,#00bfff 30%,#87ceeb 55%,#b8e4f4 70%,#fff0c8 100%);
+  background-attachment:fixed;
+}
+
+/* Decorative waves */
+.wave-bg{position:fixed;bottom:0;left:0;width:100%;pointer-events:none;z-index:0;opacity:.5}
+
+.screen{display:none;position:relative;z-index:1;min-height:100vh;flex-direction:column;align-items:center;padding:24px 14px 80px}
+.screen.active{display:flex}
+
+/* === LOGIN === */
+#loginScreen{justify-content:center;position:relative}
+.sun-deco{position:fixed;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;
+  background:radial-gradient(circle,#ffdd00,#ffaa00 60%,transparent 70%);
+  box-shadow:0 0 60px 30px rgba(255,200,0,.3);pointer-events:none;z-index:0}
+.palm-deco{position:fixed;bottom:20px;left:-10px;font-size:80px;opacity:.3;pointer-events:none;z-index:0;transform:rotate(-10deg)}
+.palm-deco2{position:fixed;bottom:10px;right:-15px;font-size:90px;opacity:.25;pointer-events:none;z-index:0;transform:rotate(8deg) scaleX(-1)}
+
+.login-box{
+  width:100%;max-width:370px;
+  background:rgba(255,255,255,0.75);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,0.9);
+  border-radius:28px;padding:32px 26px 28px;
+  box-shadow:0 20px 60px rgba(0,105,148,.25),0 2px 8px rgba(255,255,255,.5) inset;
+  position:relative;z-index:1;
+}
+.logo-area{text-align:center;margin-bottom:18px}
+.logo-icon{font-size:48px;filter:drop-shadow(0 4px 8px rgba(0,105,148,.3))}
+.org-name-lg{font-size:16px;font-weight:900;color:var(--sea);letter-spacing:2px;margin:8px 0 3px}
+.sys-title{font-size:12px;font-weight:700;color:var(--sea2);letter-spacing:2px}
+.live-clock-lg{font-family:'Nunito',sans-serif;font-size:26px;font-weight:900;text-align:center;
+  color:var(--sea);letter-spacing:2px;margin-bottom:2px;
+  text-shadow:0 2px 8px rgba(0,105,148,.2)}
+.live-date-lg{font-size:12px;text-align:center;color:var(--muted);letter-spacing:1px;margin-bottom:14px}
+.gate-notice{background:rgba(255,165,0,.12);border:1px solid rgba(255,165,0,.4);border-radius:10px;
+  padding:10px 14px;font-size:12px;color:#c06000;margin-bottom:12px;line-height:1.7;display:none}
+.gate-notice.show{display:block}
+
+/* === GLASS CARDS === */
+.card{
+  width:100%;
+  background:rgba(255,255,255,0.72);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,0.85);
+  border-radius:var(--radius);
+  padding:16px 16px;margin-bottom:12px;
+  box-shadow:var(--shadow);
+}
+.card-title{font-size:10px;letter-spacing:3px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;font-weight:700}
+
+/* === TOPBAR === */
+.topbar{width:100%;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.avatar{width:38px;height:38px;border-radius:50%;
+  background:linear-gradient(135deg,var(--sea),var(--sea3));
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:900;color:#fff;flex-shrink:0;
+  box-shadow:0 4px 12px rgba(0,105,148,.3)}
+.user-name-lg{font-size:15px;font-weight:900;color:var(--sea)}
+.user-role{font-size:11px;color:var(--muted)}
+.btn-sm{font-size:12px;color:var(--sea);cursor:pointer;padding:6px 12px;
+  border:1.5px solid var(--sea2);border-radius:20px;background:rgba(255,255,255,.7);
+  font-family:'Noto Serif TC',serif;transition:all .2s;font-weight:700}
+.btn-sm:hover{background:var(--sea);color:#fff}
+.btn-sm.purple{color:#7c5cbf;border-color:#b39ddb}
+.btn-sm.purple:hover{background:#7c5cbf;color:#fff}
+
+/* === FORM === */
+.form-row{margin-bottom:12px}
+label.fl{font-size:11px;color:var(--muted);display:block;margin-bottom:5px;letter-spacing:1px;font-weight:700}
+input[type=text],input[type=password],input[type=number],input[type=time],input[type=month],select{
+  width:100%;background:rgba(255,255,255,.85);
+  border:1.5px solid rgba(0,153,204,.25);border-radius:10px;
+  padding:10px 14px;color:var(--text);
+  font-family:'Noto Serif TC',serif;font-size:15px;outline:none;transition:border-color .2s;
+  box-shadow:0 2px 8px rgba(0,105,148,.08)}
+input:focus,select:focus{border-color:var(--sea2);box-shadow:0 0 0 3px rgba(0,153,204,.15)}
+select option{background:#fff;color:var(--text)}
+.select-large{font-size:17px;padding:12px 14px}
+
+/* === BUTTONS === */
+.btn-primary{
+  width:100%;padding:13px;border-radius:12px;border:none;
+  background:linear-gradient(135deg,var(--sea),var(--sea2));
+  color:#fff;font-family:'Noto Serif TC',serif;font-size:15px;font-weight:700;
+  cursor:pointer;letter-spacing:2px;transition:all .2s;
+  box-shadow:0 4px 16px rgba(0,105,148,.35)}
+.btn-primary:hover{filter:brightness(1.1);transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,105,148,.45)}
+.btn-primary:disabled{opacity:.5;pointer-events:none}
+.btn-outline{
+  width:100%;padding:10px;border-radius:12px;
+  border:1.5px solid var(--sea2);background:rgba(255,255,255,.7);
+  color:var(--sea);font-family:'Noto Serif TC',serif;font-size:13px;
+  cursor:pointer;letter-spacing:1px;display:flex;align-items:center;justify-content:center;gap:8px;
+  margin-bottom:8px;transition:all .2s;font-weight:700}
+.btn-outline:hover{background:var(--sea);color:#fff}
+.btn-outline:disabled{opacity:.4;cursor:not-allowed}
+
+/* === GPS === */
+.checkin-clock{font-family:'Nunito',sans-serif;font-size:36px;font-weight:900;
+  color:var(--sea);letter-spacing:2px;text-align:center;
+  text-shadow:0 2px 8px rgba(0,105,148,.2)}
+.checkin-date{font-size:12px;color:var(--muted);letter-spacing:1px;margin-top:3px;text-align:center;font-weight:700}
+.checkin-loc{font-size:11px;color:var(--sea2);margin-top:5px;text-align:center;min-height:16px;font-weight:700}
+.status-bar{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;
+  background:rgba(0,153,204,.08);border:1px solid rgba(0,153,204,.2);
+  margin-bottom:8px;font-size:12px;font-weight:700;color:var(--sea)}
+.status-dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:all .3s}
+.status-bar.locating .status-dot{background:var(--sun2);animation:blink .8s infinite}
+.status-bar.in-range  .status-dot{background:var(--leaf);box-shadow:0 0 8px rgba(46,204,113,.5)}
+.status-bar.out-range .status-dot{background:var(--coral2)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.distance-display{font-family:'Nunito',sans-serif;font-size:28px;font-weight:900;text-align:center;
+  color:var(--sea);min-height:36px;letter-spacing:1px}
+.distance-display.in-range{color:var(--leaf2)}
+.distance-display.out-range{color:var(--coral2)}
+.base-name-display{text-align:center;font-size:12px;color:var(--sea2);min-height:16px;margin-bottom:4px;font-weight:700}
+.target-info{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.info-item{background:rgba(0,153,204,.07);border:1px solid rgba(0,153,204,.15);border-radius:10px;padding:8px 10px}
+.info-label{font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:2px;font-weight:700}
+.info-value{font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--sea)}
+
+/* Radar */
+.radar-wrap{display:flex;justify-content:center;margin:8px 0 4px}
+.radar{position:relative;width:120px;height:120px}
+.radar-ring{position:absolute;inset:0;border-radius:50%;border:1.5px solid rgba(0,153,204,.2);animation:pulse-ring 2.4s ease-out infinite}
+.radar-ring:nth-child(2){inset:22%;animation-delay:.8s}
+.radar-ring:nth-child(3){inset:44%;animation-delay:1.6s}
+@keyframes pulse-ring{0%{opacity:.7;transform:scale(.95)}100%{opacity:0;transform:scale(1.18)}}
+.radar-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;
+  background:rgba(255,255,255,.9);border:2.5px solid rgba(0,153,204,.3);transition:all .4s;
+  box-shadow:0 4px 12px rgba(0,105,148,.2)}
+.radar-center.in-range{border-color:var(--leaf);box-shadow:0 0 16px rgba(46,204,113,.5)}
+.radar-center.out-range{border-color:var(--coral2);box-shadow:0 0 16px rgba(255,71,87,.3)}
+.user-dot{position:absolute;width:11px;height:11px;border-radius:50%;background:var(--sea2);
+  box-shadow:0 0 8px var(--sea2);transform:translate(-50%,-50%);display:none;transition:left .6s,top .6s}
+
+/* === TIME GATE BANNER === */
+.tg-banner{width:100%;border-radius:12px;padding:10px 14px;margin-bottom:10px;font-size:12px;line-height:1.7;display:flex;gap:8px;font-weight:700}
+.tg-banner.open{background:rgba(46,204,113,.12);border:1.5px solid rgba(46,204,113,.4);color:#1a8a4a}
+.tg-banner.closed{background:rgba(255,165,0,.1);border:1.5px solid rgba(255,165,0,.35);color:#c06000}
+.tg-banner.nowork{background:rgba(255,107,107,.1);border:1.5px solid rgba(255,107,107,.3);color:#c0002a}
+
+/* === LOCATION TABS === */
+.location-tabs{display:flex;gap:8px;margin-bottom:14px}
+.loc-tab{flex:1;padding:11px 6px;border-radius:12px;
+  border:1.5px solid rgba(0,153,204,.25);background:rgba(255,255,255,.55);
+  color:var(--muted);font-family:'Noto Serif TC',serif;font-size:14px;
+  cursor:pointer;text-align:center;transition:all .2s;letter-spacing:1px;font-weight:700}
+.loc-tab.active{border-color:var(--sea);color:#fff;
+  background:linear-gradient(135deg,var(--sea),var(--sea2));
+  box-shadow:0 4px 14px rgba(0,105,148,.3)}
+.loc-tab.disabled{opacity:.3;pointer-events:none}
+
+/* === CHECKIN BUTTONS === */
+.shift-section{margin-bottom:12px}
+.shift-header{font-size:11px;letter-spacing:2px;margin-bottom:8px;padding-left:2px;font-weight:700}
+.ck-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px}
+.ck-col-label{font-size:10px;color:var(--muted);margin-bottom:5px;letter-spacing:1px;font-weight:700;text-align:center}
+.ck-btn{padding:13px 4px;border-radius:12px;border:1.5px solid rgba(0,153,204,.2);
+  background:rgba(255,255,255,.6);color:var(--muted);
+  font-family:'Noto Serif TC',serif;font-size:13px;cursor:pointer;
+  transition:all .2s;text-align:center;line-height:1.5;font-weight:700}
+.ck-btn .ck-label{font-size:12px;letter-spacing:1px}
+.ck-btn .ck-time{font-family:'Nunito',sans-serif;font-size:10px;margin-top:3px;color:var(--muted);font-weight:700}
+.ck-btn.active{border-color:var(--sea2);color:var(--sea);background:rgba(0,153,204,.1);
+  box-shadow:0 4px 12px rgba(0,153,204,.2)}
+.ck-btn.active .ck-time{color:var(--leaf2)}
+.ck-btn.makeup{border-color:var(--sun2);color:var(--sun2);background:rgba(255,149,0,.08)}
+.ck-btn.makeup .ck-time{color:var(--sun2)}
+.ck-btn.done{border-color:var(--leaf);color:var(--leaf2);background:rgba(46,204,113,.08);pointer-events:none}
+.ck-btn.done .ck-time{color:var(--leaf2)}
+.ck-btn.disabled{opacity:.35;pointer-events:none}
+.ck-btn.no-shift{opacity:.2;pointer-events:none}
+
+/* === RECORDS === */
+.record-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,153,204,.1)}
+.record-item:last-child{border-bottom:none}
+.record-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.record-name{font-size:13px;font-weight:900;color:var(--sea)}
+.record-meta{font-size:11px;color:var(--muted);font-family:'Nunito',sans-serif;font-weight:700;line-height:1.6}
+.record-tag{font-size:10px;padding:2px 8px;border-radius:20px;display:inline-block;margin-top:3px;font-weight:700}
+.record-tag.makeup{background:rgba(255,149,0,.15);color:#c06000}
+.record-tag.clinic{background:rgba(0,153,204,.12);color:var(--sea)}
+.record-tag.station{background:rgba(124,92,191,.12);color:#7c5cbf}
+.empty-records{color:var(--muted);font-size:13px;text-align:center;padding:16px 0;font-weight:700}
+
+/* === ADMIN === */
+.admin-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.tab-btn{padding:7px 13px;border-radius:20px;border:1.5px solid rgba(0,153,204,.25);
+  background:rgba(255,255,255,.6);color:var(--muted);
+  font-family:'Noto Serif TC',serif;font-size:12px;cursor:pointer;transition:all .2s;font-weight:700}
+.tab-btn.active{background:linear-gradient(135deg,var(--sea),var(--sea2));border-color:var(--sea);color:#fff}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+.staff-row{display:flex;align-items:center;gap:8px;padding:10px 12px;
+  background:rgba(255,255,255,.55);border:1px solid rgba(0,153,204,.15);
+  border-radius:10px;margin-bottom:6px;flex-wrap:wrap}
+.staff-row .sname{flex:1;font-size:14px;font-weight:700;color:var(--sea)}
+.staff-row .srole{font-size:10px;color:var(--sea2);font-weight:700;letter-spacing:1px}
+.sbtn{padding:5px 10px;border-radius:8px;border:none;font-size:11px;cursor:pointer;font-family:'Noto Serif TC',serif;font-weight:700}
+.sbtn.del{background:rgba(255,71,87,.12);color:var(--coral2)}
+.sbtn.del:hover{background:rgba(255,71,87,.25)}
+.sbtn.edit{background:rgba(0,153,204,.12);color:var(--sea)}
+.sbtn.edit:hover{background:rgba(0,153,204,.25)}
+.base-row{display:flex;align-items:center;gap:8px;padding:10px 12px;
+  background:rgba(255,255,255,.55);border:1px solid rgba(0,153,204,.15);
+  border-radius:10px;margin-bottom:6px}
+.base-row .bname{flex:1;font-size:14px;font-weight:700;color:var(--sea)}
+.base-row .bcoord{font-size:10px;color:var(--muted);font-family:'Nunito',sans-serif;font-weight:700}
+.divider{height:1px;background:rgba(0,153,204,.15);margin:12px 0}
+.section-sub{font-size:10px;color:var(--muted);letter-spacing:3px;margin-bottom:10px;text-transform:uppercase;font-weight:700}
+.admin-badge{display:inline-block;font-size:9px;letter-spacing:2px;
+  background:rgba(124,92,191,.12);color:#7c5cbf;
+  border:1px solid rgba(124,92,191,.3);border-radius:4px;padding:2px 7px;margin-left:6px;vertical-align:middle;font-weight:700}
+
+/* === CALENDAR === */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-head{text-align:center;font-size:10px;color:var(--muted);padding:3px 0;font-weight:700}
+.cal-head.sun{color:var(--coral2)}.cal-head.sat{color:var(--sea)}
+.cal-cell{border-radius:8px;border:1.5px solid rgba(0,153,204,.15);font-size:11px;cursor:pointer;
+  transition:all .15s;background:rgba(255,255,255,.55);min-height:56px;
+  display:flex;flex-direction:column;align-items:center;padding:3px 2px;gap:2px}
+.cal-cell:hover{border-color:var(--sea2);background:rgba(0,153,204,.08)}
+.cal-cell.today{box-shadow:0 0 0 2px var(--sea2)}
+.cal-cell.empty{border-color:transparent;background:transparent;cursor:default}
+.cal-cell-date{font-size:12px;font-weight:900;font-family:'Nunito',sans-serif;color:var(--muted)}
+.cal-cell.sun-col .cal-cell-date{color:rgba(255,71,87,.6)}
+.cal-cell.sat-col .cal-cell-date{color:rgba(0,105,148,.6)}
+.cal-pill{font-size:9px;padding:1px 4px;border-radius:4px;width:92%;text-align:center;line-height:1.4;font-weight:700}
+.cal-pill.clinic{background:rgba(0,153,204,.18);color:var(--sea)}
+.cal-pill.station{background:rgba(124,92,191,.18);color:#7c5cbf}
+.cal-pill.off{background:rgba(200,200,200,.2);color:#aaa;font-size:8px}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.cal-quick{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+.cal-legend{display:flex;gap:10px;margin-bottom:8px;font-size:11px;color:var(--muted);font-weight:700}
+
+/* === REPORT === */
+.report-table{width:100%;border-collapse:collapse;font-size:12px}
+.report-table th{padding:8px 5px;text-align:left;color:var(--sea);border-bottom:2px solid rgba(0,153,204,.2);white-space:nowrap;font-weight:700;background:rgba(0,153,204,.06)}
+.report-table td{padding:7px 5px;border-bottom:1px solid rgba(0,153,204,.08);vertical-align:top}
+.report-table td.mono{font-family:'Nunito',sans-serif;font-weight:700}
+.makeup-mark{font-size:9px;color:var(--sun2);display:block;font-weight:700}
+.missing-mark{color:var(--coral2);font-size:11px;font-weight:700}
+
+/* === LOADING === */
+.loading-overlay{position:fixed;inset:0;background:rgba(0,105,148,.25);
+  backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+.loading-overlay.show{display:flex}
+.loading-spinner{width:44px;height:44px;border:4px solid rgba(255,255,255,.3);
+  border-top:4px solid #fff;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{color:#fff;font-size:14px;font-weight:700;letter-spacing:2px}
+
+/* RANGE */
+.range-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.range-row input[type=range]{flex:1;height:4px;padding:0;accent-color:var(--sea2)}
+.range-val{font-family:'Nunito',sans-serif;font-size:12px;color:var(--sea);width:50px;text-align:right;font-weight:700}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:rgba(255,255,255,.92);backdrop-filter:blur(12px);
+  border:1.5px solid var(--leaf);color:#1a7a4a;
+  padding:11px 22px;border-radius:40px;font-size:13px;font-weight:700;
+  transition:transform .35s;z-index:200;white-space:nowrap;max-width:92vw;text-align:center;
+  box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.error{border-color:var(--coral2);color:var(--coral2)}
+.toast.warn{border-color:var(--sun2);color:#c06000}
+.toast.info{border-color:var(--sea2);color:var(--sea)}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,80,120,.45);backdrop-filter:blur(6px);z-index:150;align-items:center;justify-content:center;padding:20px}
+.modal-bg.show{display:flex}
+.modal-box{background:rgba(255,255,255,.95);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.9);border-radius:20px;padding:24px 20px;width:100%;max-width:380px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,105,148,.3)}
+.modal-title{font-size:16px;font-weight:900;color:var(--sea);margin-bottom:16px}
+.btn-cancel{flex:1;padding:12px;border-radius:10px;border:1.5px solid rgba(0,153,204,.3);background:transparent;color:var(--muted);font-family:'Noto Serif TC',serif;font-size:14px;cursor:pointer;font-weight:700}
+.btn-cancel:hover{background:rgba(0,0,0,.05)}
+
+.sync-bar{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);
+  padding:6px 10px;background:rgba(0,153,204,.06);border-radius:8px;margin-bottom:8px;font-weight:700}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--leaf);flex-shrink:0}
+.sync-dot.syncing{background:var(--sun2);animation:blink .8s infinite}
+.sync-dot.error{background:var(--coral2)}
+</style>
+</head>
+<body>
+
+<!-- Decorations -->
+<div class="sun-deco"></div>
+<div class="palm-deco">🌴</div>
+<div class="palm-deco2">🌴</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loadingText">載入中…</div>
+</div>
+
+<!-- ══ LOGIN ══ -->
+<div class="screen active" id="loginScreen">
+  <div class="login-box">
+    <div class="logo-area">
+      <div class="logo-icon">🏥</div>
+      <div class="org-name-lg">平安醫療長期照護體系</div>
+      <div class="sys-title">員工出勤管理系統</div>
+    </div>
+    <div class="live-clock-lg" id="loginClock">--:--:--</div>
+    <div class="live-date-lg" id="loginDate">----/--/-- 星期-</div>
+    <div class="gate-notice" id="loginGateNotice"></div>
+    <div class="form-row">
+      <label class="fl">🌊 選擇帳號</label>
+      <select id="loginUser" class="select-large"></select>
+    </div>
+    <div class="form-row" style="display:none"><input type="password" id="loginPass"></div>
+    <button class="btn-primary" onclick="doLogin()">🐚 登 入</button>
+  </div>
+</div>
+
+<!-- ══ MAIN ══ -->
+<div class="screen" id="mainScreen">
+  <div style="width:100%;max-width:440px">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="avatar" id="mainAvatar">?</div>
+        <div>
+          <div class="user-name-lg" id="mainUserName">—</div>
+          <div class="user-role" id="mainUserRole">—</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn-sm purple" id="adminEntryBtn" onclick="goAdmin()" style="display:none">⚙ 後台</button>
+        <button class="btn-sm" onclick="doLogout()">登出</button>
+      </div>
+    </div>
+
+    <div class="tg-banner closed" id="tgBanner"><span>⏰</span><span id="tgBannerText">載入中…</span></div>
+
+    <!-- GPS Card -->
+    <div class="card">
+      <div class="checkin-clock" id="mainClock">--:--:--</div>
+      <div class="checkin-date" id="mainDate">----/--/--</div>
+      <div class="checkin-loc" id="mainLoc">📍 尚未定位</div>
+      <div class="radar-wrap">
+        <div class="radar" id="radar">
+          <div class="radar-ring"></div><div class="radar-ring"></div><div class="radar-ring"></div>
+          <div class="radar-center" id="radarCenter">🏥</div>
+          <div class="user-dot" id="userDot"></div>
+        </div>
+      </div>
+      <div class="base-name-display" id="baseNameDisplay">—</div>
+      <div class="status-bar" id="statusBar"><div class="status-dot"></div><span id="statusText">尚未定位，請點擊下方按鈕</span></div>
+      <div class="distance-display" id="distanceDisplay">— m</div>
+      <div class="target-info">
+        <div class="info-item"><div class="info-label">允許半徑</div><div class="info-value" id="rangeDisplay">30 m</div></div>
+        <div class="info-item"><div class="info-label">GPS精確度</div><div class="info-value" id="accuracyDisplay">—</div></div>
+      </div>
+      <br>
+      <button class="btn-outline" id="btnLocate" onclick="startLocate()"><span>🔍</span><span>偵測我的位置</span></button>
+    </div>
+
+    <!-- Checkin Card -->
+    <div class="card">
+      <div class="card-title">🌺 打卡作業</div>
+      <div class="location-tabs">
+        <button class="loc-tab active" id="tabClinic" onclick="selectLocation('clinic')">🏥 診所</button>
+        <button class="loc-tab" id="tabStation" onclick="selectLocation('station')">🏠 據點</button>
+      </div>
+      <!-- Clinic -->
+      <div id="clinicPanel">
+        <div class="shift-section">
+          <div class="shift-header" style="color:#1a8a4a">🌅 上午班（08:00–12:00）</div>
+          <div class="ck-row">
+            <div><div class="ck-col-label">上班</div>
+              <button class="ck-btn" id="ck_clinic_am_in" onclick="doCheckin('clinic','am','in')">
+                <div class="ck-label">上班打卡</div><div class="ck-time">07:30–08:30</div>
+              </button>
+            </div>
+            <div><div class="ck-col-label">下班</div>
+              <button class="ck-btn" id="ck_clinic_am_out" onclick="doCheckin('clinic','am','out')">
+                <div class="ck-label">下班打卡</div><div class="ck-time">11:30–12:30</div>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="shift-section">
+          <div class="shift-header" style="color:var(--sea)">🌆 下午班（14:00–18:00）</div>
+          <div class="ck-row">
+            <div><div class="ck-col-label">上班</div>
+              <button class="ck-btn" id="ck_clinic_pm_in" onclick="doCheckin('clinic','pm','in')">
+                <div class="ck-label">上班打卡</div><div class="ck-time">13:30–14:30</div>
+              </button>
+            </div>
+            <div><div class="ck-col-label">下班</div>
+              <button class="ck-btn" id="ck_clinic_pm_out" onclick="doCheckin('clinic','pm','out')">
+                <div class="ck-label">下班打卡</div><div class="ck-time">17:30–18:30</div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Station -->
+      <div id="stationPanel" style="display:none">
+        <div class="shift-section">
+          <div class="shift-header" style="color:#7c5cbf">🌴 全天班（08:00–16:30）</div>
+          <div class="ck-row">
+            <div><div class="ck-col-label">上班</div>
+              <button class="ck-btn" id="ck_station_in" onclick="doCheckin('station','full','in')">
+                <div class="ck-label">上班打卡</div><div class="ck-time">07:30–08:30</div>
+              </button>
+            </div>
+            <div><div class="ck-col-label">下班</div>
+              <button class="ck-btn" id="ck_station_out" onclick="doCheckin('station','full','out')">
+                <div class="ck-label">下班打卡</div><div class="ck-time">16:00–17:00</div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Today Records -->
+    <div class="card">
+      <div class="sync-bar"><div class="sync-dot" id="syncDot"></div><span id="syncText">資料已與雲端同步</span></div>
+      <div class="card-title">🐠 今日打卡紀錄</div>
+      <div id="recordList"><div class="empty-records">今日尚無打卡紀錄</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ADMIN ══ -->
+<div class="screen" id="adminScreen">
+  <div style="width:100%;max-width:500px">
+    <div class="topbar">
+      <div style="font-size:15px;font-weight:900;color:#7c5cbf">⚙ 管理員後台<span class="admin-badge">ADMIN</span></div>
+      <button class="btn-sm" onclick="goMain()">← 返回</button>
+    </div>
+    <div class="admin-tabs">
+      <button class="tab-btn active" onclick="switchTab('tabStaff',this)">👤 帳號</button>
+      <button class="tab-btn" onclick="switchTab('tabBases',this)">📍 基地</button>
+      <button class="tab-btn" onclick="switchTab('tabSchedule',this)">📅 班表</button>
+      <button class="tab-btn" onclick="switchTab('tabReport',this)">📊 報表</button>
+    </div>
+
+    <!-- STAFF -->
+    <div class="tab-panel active" id="tabStaff">
+      <div class="card">
+        <div class="section-sub">現有帳號</div>
+        <div id="staffList"></div>
+        <div class="divider"></div>
+        <div class="section-sub">新增帳號</div>
+        <div class="form-row"><label class="fl">姓名／帳號</label><input type="text" id="newUsername" placeholder="例：林小明"></div>
+        <div class="form-row"><label class="fl">密碼</label><input type="password" id="newPassword" placeholder="至少4碼"></div>
+        <div class="form-row"><label class="fl">身份</label>
+          <select id="newRole"><option value="staff">一般員工</option><option value="admin">管理員</option></select>
+        </div>
+        <button class="btn-primary" onclick="addStaff()">新增帳號</button>
+      </div>
+    </div>
+
+    <!-- BASES -->
+    <div class="tab-panel" id="tabBases">
+      <div class="card">
+        <div style="background:rgba(0,153,204,.08);border:1px solid rgba(0,153,204,.2);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--sea);line-height:1.8;font-weight:700">
+          💡 診所：上午 08:00–12:00，下午 14:00–18:00<br>
+          💡 據點：全天 08:00–16:30
+        </div>
+        <div class="section-sub">基地列表</div>
+        <div id="baseList"></div>
+        <div class="divider"></div>
+        <div class="section-sub">新增基地</div>
+        <div class="form-row"><label class="fl">基地名稱</label><input type="text" id="newBaseName" placeholder="例：平安診所"></div>
+        <div class="form-row"><label class="fl">基地類型</label>
+          <select id="newBaseType">
+            <option value="clinic">🏥 診所</option>
+            <option value="station">🏠 據點</option>
+          </select>
+        </div>
+        <div class="form-row"><label class="fl">緯度</label><input type="number" id="newBaseLat" step="0.000001"></div>
+        <div class="form-row"><label class="fl">經度</label><input type="number" id="newBaseLng" step="0.000001"></div>
+        <div class="form-row"><label class="fl">允許半徑（公尺）</label>
+          <div class="range-row">
+            <input type="range" id="newBaseRange" min="10" max="300" value="30" oninput="document.getElementById('newBaseRangeVal').textContent=this.value+' m'">
+            <span class="range-val" id="newBaseRangeVal">30 m</span>
+          </div>
+        </div>
+        <button class="btn-outline" onclick="useCurrentLocation()"><span>📍</span><span>使用目前位置</span></button>
+        <button class="btn-primary" onclick="addBase()">新增基地</button>
+      </div>
+    </div>
+
+    <!-- SCHEDULE -->
+    <div class="tab-panel" id="tabSchedule">
+      <div class="card">
+        <div class="section-sub">選擇員工</div>
+        <div class="form-row"><select id="schedStaffSel" onchange="loadSchedForStaff()"></select></div>
+        <div id="schedEditor" style="display:none">
+          <div style="background:rgba(255,165,0,.08);border:1px solid rgba(255,165,0,.25);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#c06000;line-height:1.8;font-weight:700">
+            📝 補打卡（下班時段結束 10 分鐘後觸發）<br>
+            診所上午下班 → 記錄 <b>12:15</b><br>
+            診所下午下班 → 記錄 <b>18:30</b><br>
+            據點下班 → 記錄 <b>16:45</b><br>
+            <span style="color:var(--coral2)">⚠ 隔天仍未打卡 → 報表標示缺失</span>
+          </div>
+          <div class="cal-nav">
+            <button class="sbtn edit" onclick="calNav(-1)">◀ 上月</button>
+            <span id="calMonthLabel" style="font-size:14px;font-weight:900;color:var(--sea)"></span>
+            <button class="sbtn edit" onclick="calNav(1)">下月 ▶</button>
+          </div>
+          <div class="cal-legend">
+            <span style="color:var(--sea)">■ 診所</span>
+            <span style="color:#7c5cbf">■ 據點</span>
+            <span style="color:var(--sea2)">■ 診所+據點</span>
+          </div>
+          <p style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:700">點選日期切換：休假→診所→據點→診所+據點</p>
+          <div class="cal-quick">
+            <button class="sbtn edit" onclick="calFill('clinic')">週一五填診所</button>
+            <button class="sbtn edit" onclick="calFill('station')">週一五填據點</button>
+            <button class="sbtn del" onclick="calClear()">清除本月</button>
+          </div>
+          <div class="cal-grid" id="calHeader"></div>
+          <div class="cal-grid" id="schedCalendar" style="margin-top:3px"></div>
+          <div id="calSummary" style="font-size:12px;color:var(--sea);text-align:right;margin:6px 0 12px;font-weight:700"></div>
+          <button class="btn-primary" onclick="saveSchedule()">☁ 儲存班表至雲端</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORT -->
+    <div class="tab-panel" id="tabReport">
+      <div class="card">
+        <div class="section-sub">出勤報表</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div class="form-row" style="margin:0"><label class="fl">員工</label>
+            <select id="reportStaff"><option value="">全部員工</option></select>
+          </div>
+          <div class="form-row" style="margin:0"><label class="fl">月份</label>
+            <input type="month" id="reportMonth" style="font-size:13px;padding:8px 10px">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <button class="btn-primary" style="font-size:13px;padding:10px" onclick="renderReport()">🔍 查詢</button>
+          <button class="btn-outline" style="margin:0;font-size:13px;padding:10px" onclick="exportCSV()">📥 匯出 CSV</button>
+        </div>
+        <div style="overflow-x:auto"><div id="reportTable"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Base Edit Modal -->
+<div class="modal-bg" id="baseEditModal">
+  <div class="modal-box">
+    <div class="modal-title">✏️ 編輯基地</div>
+    <input type="hidden" id="editBaseIdx">
+    <div class="form-row"><label class="fl">基地名稱</label><input type="text" id="editBaseName"></div>
+    <div class="form-row"><label class="fl">基地類型</label>
+      <select id="editBaseType">
+        <option value="clinic">🏥 診所</option>
+        <option value="station">🏠 據點</option>
+      </select>
+    </div>
+    <div class="form-row"><label class="fl">緯度</label><input type="number" id="editBaseLat" step="0.000001"></div>
+    <div class="form-row"><label class="fl">經度</label><input type="number" id="editBaseLng" step="0.000001"></div>
+    <div class="form-row"><label class="fl">允許半徑（公尺）</label>
+      <div class="range-row">
+        <input type="range" id="editBaseRange" min="10" max="300" value="30" oninput="document.getElementById('editBaseRangeVal').textContent=this.value+' m'">
+        <span class="range-val" id="editBaseRangeVal">30 m</span>
+      </div>
+    </div>
+    <button class="btn-outline" onclick="useCurrentLocationEdit()" style="margin-bottom:12px"><span>📍</span><span>使用目前位置</span></button>
+    <div style="display:flex;gap:8px">
+      <button class="btn-primary" onclick="saveBaseEdit()">💾 儲存</button>
+      <button class="btn-cancel" onclick="closeBaseModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════
+const GAS_URL='https://script.google.com/macros/s/AKfycbzjqHKh6PtzWqSbjZDlMzt56HsJENIuItiRjdFVz4amv_2fCKwEocuAJrbfkkjmEJE7/exec';
+
+const LOCATION_CONFIG={
+  clinic:{
+    label:'診所',icon:'🏥',color:'var(--sea)',
+    shifts:{
+      am:{label:'上午班',inStart:'07:30',inEnd:'08:30',outStart:'11:30',outEnd:'12:30',makeupOut:'12:15'},
+      pm:{label:'下午班',inStart:'13:30',inEnd:'14:30',outStart:'17:30',outEnd:'18:30',makeupOut:'18:30'}
+    }
+  },
+  station:{
+    label:'據點',icon:'🏠',color:'#7c5cbf',
+    shifts:{
+      full:{label:'全天班',inStart:'07:30',inEnd:'08:30',outStart:'16:00',outEnd:'17:00',makeupOut:'16:45'}
+    }
+  }
+};
+
+// ══════════════════════════════════
+//  LOCAL DB (cache)
+// ══════════════════════════════════
+const DB={
+  get(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v??d}catch{return d}},
+  set(k,v){localStorage.setItem(k,JSON.stringify(v))}
+};
+
+// ══════════════════════════════════
+//  GAS API
+// ══════════════════════════════════
+async function gasGet(params){
+  const url=GAS_URL+'?'+new URLSearchParams(params);
+  const res=await fetch(url);
+  return res.json();
+}
+async function gasPost(data){
+  const res=await fetch(GAS_URL,{method:'POST',body:JSON.stringify(data)});
+  return res.json();
+}
+
+function showLoading(text='載入中…'){
+  document.getElementById('loadingText').textContent=text;
+  document.getElementById('loadingOverlay').classList.add('show');
+}
+function hideLoading(){document.getElementById('loadingOverlay').classList.remove('show')}
+
+function setSyncStatus(state,text){
+  const dot=document.getElementById('syncDot');
+  const txt=document.getElementById('syncText');
+  if(!dot)return;
+  dot.className='sync-dot'+(state==='syncing'?' syncing':state==='error'?' error':'');
+  if(txt)txt.textContent=text;
+}
+
+// ══════════════════════════════════
+//  DATA — Staff
+// ══════════════════════════════════
+async function loadStaff(){
+  try{
+    const r=await gasGet({action:'getStaff'});
+    if(r.ok&&r.staff.length){DB.set('chk_staff',r.staff);return r.staff}
+  }catch(e){}
+  // fallback to local
+  let s=DB.get('chk_staff',null);
+  if(!s){
+    const names=['高麗君','翁美慧','蔡雅安','潘淑凰','顏淑萍','曾麗惠','陳韻筑','鍾文鶯','林智仁','黃千千','蕭淑滿','余嘉琪','李孟娟','蔡芸樺','徐暐達','臧妘惠','張淑貞','蔡尚文','袁子晏','侯妙薇','侯雅琳','黃靚'];
+    s=[{username:'admin',password:'admin1234',display:'系統管理員',role:'admin'},
+       ...names.map(n=>({username:n,password:'0000',display:n,role:'staff'}))];
+    DB.set('chk_staff',s);
+  }
+  return s;
+}
+function getStaff(){return DB.get('chk_staff',[])}
+async function syncStaff(){
+  try{await gasPost({action:'saveStaff',staff:getStaff()})}catch(e){}
+}
+
+// ══════════════════════════════════
+//  DATA — Schedules
+// ══════════════════════════════════
+async function loadSchedules(){
+  try{
+    const r=await gasGet({action:'getSchedules'});
+    if(r.ok){
+      // Convert flat rows to nested structure
+      const all={};
+      r.schedules.forEach(row=>{
+        if(!all[row.username])all[row.username]={workDays:{}};
+        all[row.username].workDays[row.date]=row.shift;
+      });
+      DB.set('chk_schedules',all);return all;
+    }
+  }catch(e){}
+  return DB.get('chk_schedules',{});
+}
+function getSchedule(u){const all=DB.get('chk_schedules',{});return all[u]||{workDays:{}}}
+function saveScheduleLocal(u,sc){const all=DB.get('chk_schedules',{});all[u]=sc;DB.set('chk_schedules',all)}
+async function syncSchedules(){
+  try{
+    const all=DB.get('chk_schedules',{});
+    const flat=[];
+    Object.entries(all).forEach(([username,sc])=>{
+      Object.entries(sc.workDays||{}).forEach(([date,shift])=>{
+        flat.push({username,date,shift});
+      });
+    });
+    await gasPost({action:'saveSchedule',schedules:flat});
+  }catch(e){}
+}
+
+// ══════════════════════════════════
+//  DATA — Bases
+// ══════════════════════════════════
+async function loadBases(){
+  try{
+    const r=await gasGet({action:'getBases'});
+    if(r.ok&&r.bases&&r.bases.length){DB.set('chk_bases',r.bases);return r.bases}
+  }catch(e){}
+  let b=DB.get('chk_bases',null);
+  if(!b){b=[{id:'b1',name:'平安診所岱江里據點',type:'clinic',lat:23.22399,lng:120.09244,range:30}];DB.set('chk_bases',b)}
+  return b;
+}
+function getBases(){return DB.get('chk_bases',[])}
+async function syncBases(){
+  try{await gasPost({action:'saveBases',bases:getBases()})}catch(e){}
+}
+
+// ══════════════════════════════════
+//  DATA — Records
+// ══════════════════════════════════
+async function loadRecords(){
+  try{
+    const r=await gasGet({action:'getRecords'});
+    if(r.ok){DB.set('chk_records',r.records);return r.records}
+  }catch(e){}
+  return DB.get('chk_records',[]);
+}
+function getRecords(){return DB.get('chk_records',[])}
+function saveRecords(r){DB.set('chk_records',r)}
+
+// ══════════════════════════════════
+//  SESSION
+// ══════════════════════════════════
+let SESSION=null;
+let currentLoc='clinic';
+
+// ══════════════════════════════════
+//  CLOCK
+// ══════════════════════════════════
+const WDN=['日','一','二','三','四','五','六'];
+function pad(n){return String(n).padStart(2,'0')}
+function fmtDT(d){return`${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`}
+function fmtDate(d){return`${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} 星期${WDN[d.getDay()]}`}
+function fmtTime(d){return`${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`}
+function dateStr(d){return`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
+
+function clockTick(){
+  const now=new Date();const t=fmtTime(now);
+  document.getElementById('loginClock').textContent=t;
+  document.getElementById('loginDate').textContent=fmtDate(now);
+  const mc=document.getElementById('mainClock');
+  if(mc){mc.textContent=t;document.getElementById('mainDate').textContent=fmtDate(now)}
+  if(SESSION){updateBanner(now);updateAllButtons(now)}
+}
+setInterval(clockTick,1000);clockTick();
+
+// ══════════════════════════════════
+//  TIME HELPERS
+// ══════════════════════════════════
+function toMin(s){const[h,m]=s.split(':').map(Number);return h*60+m}
+function inWindow(cur,s,e){return cur>=toMin(s)&&cur<=toMin(e)}
+function getTodayShift(){
+  if(!SESSION)return null;
+  return(getSchedule(SESSION.username).workDays||{})[dateStr(new Date())]||null;
+}
+
+// ══════════════════════════════════
+//  BANNER
+// ══════════════════════════════════
+function updateBanner(now){
+  const banner=document.getElementById('tgBanner');
+  const text=document.getElementById('tgBannerText');
+  const notice=document.getElementById('loginGateNotice');
+  if(!banner||!SESSION)return;
+  const shift=getTodayShift();
+  if(!shift||shift==='off'){
+    banner.className='tg-banner nowork';
+    text.textContent='今日（'+dateStr(now)+'）非排班日';
+    if(notice){notice.textContent=text.textContent+'（仍可登入查看紀錄）';notice.className='gate-notice show'}
+    return;
+  }
+  if(notice)notice.className='gate-notice';
+  const cur=now.getHours()*60+now.getMinutes();
+  let open=false;
+  if(shift==='clinic'||shift==='both'){
+    const c=LOCATION_CONFIG.clinic;
+    open=open||inWindow(cur,c.shifts.am.inStart,c.shifts.am.inEnd)||inWindow(cur,c.shifts.am.outStart,c.shifts.am.outEnd)
+             ||inWindow(cur,c.shifts.pm.inStart,c.shifts.pm.inEnd)||inWindow(cur,c.shifts.pm.outStart,c.shifts.pm.outEnd);
+  }
+  if(shift==='station'||shift==='both'){
+    const s=LOCATION_CONFIG.station;
+    open=open||inWindow(cur,s.shifts.full.inStart,s.shifts.full.inEnd)||inWindow(cur,s.shifts.full.outStart,s.shifts.full.outEnd);
+  }
+  const locLabel=shift==='both'?'診所+據點':shift==='clinic'?'診所':'據點';
+  banner.className='tg-banner '+(open?'open':'closed');
+  text.textContent=open?`✅ 打卡時段開放中（今日：${locLabel}）`:`⏳ 非打卡時段（今日排班：${locLabel}）`;
+}
+
+// ══════════════════════════════════
+//  INIT
+// ══════════════════════════════════
+async function initApp(){
+  showLoading('連線雲端資料…');
+  try{
+    await Promise.all([loadStaff(),loadSchedules(),loadBases()]);
+    buildLoginSelect();
+    setSyncStatus('ok','資料已與雲端同步');
+  }catch(e){
+    setSyncStatus('error','離線模式，使用本機資料');
+    buildLoginSelect();
+  }
+  hideLoading();
+}
+initApp();
+
+// ══════════════════════════════════
+//  LOGIN
+// ══════════════════════════════════
+function buildLoginSelect(){
+  const sel=document.getElementById('loginUser');
+  sel.innerHTML='';
+  getStaff().forEach(s=>{const o=document.createElement('option');o.value=s.username;o.textContent=s.display;sel.appendChild(o)});
+}
+
+async function doLogin(){
+  const u=document.getElementById('loginUser').value;
+  const found=getStaff().find(s=>s.username===u);
+  if(!found)return;
+  SESSION={username:found.username,display:found.display,role:found.role};
+  document.getElementById('mainAvatar').textContent=found.display[0];
+  document.getElementById('mainUserName').textContent=found.display;
+  document.getElementById('mainUserRole').textContent=found.role==='admin'?'管理員':'一般員工';
+  document.getElementById('adminEntryBtn').style.display=found.role==='admin'?'':'none';
+
+  // Load today's records from cloud
+  showLoading('載入打卡紀錄…');
+  try{await loadRecords()}catch(e){}
+  hideLoading();
+
+  const shift=getTodayShift();
+  if(shift==='station')selectLocation('station');else selectLocation('clinic');
+  renderTodayRecords();
+  updateBanner(new Date());
+  updateAllButtons(new Date());
+  showScreen('mainScreen');
+}
+
+function doLogout(){
+  SESSION=null;
+  if(locateWatcher){navigator.geolocation.clearWatch(locateWatcher);locateWatcher=null}
+  inRange=false;currentDist=null;nearBase=null;lastPos=null;
+  document.getElementById('loginGateNotice').className='gate-notice';
+  resetRadar();showScreen('loginScreen');
+}
+function goAdmin(){renderAdminAll();showScreen('adminScreen')}
+async function goMain(){
+  showLoading('重新載入…');
+  try{await loadRecords()}catch(e){}
+  hideLoading();
+  showScreen('mainScreen');renderTodayRecords();updateAllButtons(new Date());
+}
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')}
+
+// ══════════════════════════════════
+//  LOCATION TABS
+// ══════════════════════════════════
+function selectLocation(loc){
+  currentLoc=loc;
+  document.getElementById('tabClinic').className='loc-tab'+(loc==='clinic'?' active':'');
+  document.getElementById('tabStation').className='loc-tab'+(loc==='station'?' active':'');
+  document.getElementById('clinicPanel').style.display=loc==='clinic'?'block':'none';
+  document.getElementById('stationPanel').style.display=loc==='station'?'block':'none';
+  updateAllButtons(new Date());
+}
+
+// ══════════════════════════════════
+//  GPS
+// ══════════════════════════════════
+let currentDist=null,locateWatcher=null,inRange=false,nearBase=null,lastPos=null;
+function startLocate(){
+  if(!navigator.geolocation){showToast('瀏覽器不支援 GPS','error');return}
+  if(locateWatcher)navigator.geolocation.clearWatch(locateWatcher);
+  setStatus('locating','定位中，請稍候…');
+  const btn=document.getElementById('btnLocate');btn.disabled=true;btn.innerHTML='<span>📡</span><span>定位中…</span>';
+  locateWatcher=navigator.geolocation.watchPosition(onPosition,onError,{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+}
+function onPosition(pos){
+  const{latitude:lat,longitude:lng,accuracy}=pos.coords;
+  lastPos={lat,lng};
+  const btn=document.getElementById('btnLocate');btn.disabled=false;btn.innerHTML='<span>🔄</span><span>重新定位</span>';
+  document.getElementById('accuracyDisplay').textContent=Math.round(accuracy)+' m';
+  document.getElementById('mainLoc').textContent=`📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  const bases=getBases();
+  let best=null,bestDist=Infinity;
+  bases.forEach(b=>{const d=haversine(lat,lng,b.lat,b.lng);if(d<bestDist){bestDist=d;best=b}});
+  currentDist=bestDist;nearBase=best;inRange=!!(best&&bestDist<=best.range);
+  const distEl=document.getElementById('distanceDisplay');
+  distEl.textContent=bestDist>=1000?(bestDist/1000).toFixed(2)+' km':Math.round(bestDist)+' m';
+  distEl.className='distance-display '+(inRange?'in-range':'out-range');
+  const center=document.getElementById('radarCenter');
+  center.className='radar-center '+(inRange?'in-range':'out-range');
+  center.textContent=inRange?'✅':'❌';
+  document.getElementById('baseNameDisplay').textContent=best?`${LOCATION_CONFIG[best.type]?.icon||'📍'} ${best.name}`:'無基地';
+  document.getElementById('rangeDisplay').textContent=(best?best.range:30)+' m';
+  const dot=document.getElementById('userDot');dot.style.display='block';
+  const radar=document.getElementById('radar');const r=radar.offsetWidth/2;
+  const maxD=(best?best.range:100)*3;const ratio=Math.min(bestDist/maxD,1)*0.84;
+  const bearing=best?getBearing(best.lat,best.lng,lat,lng):0;
+  dot.style.left=(r+ratio*r*Math.sin(bearing*Math.PI/180))+'px';
+  dot.style.top=(r-ratio*r*Math.cos(bearing*Math.PI/180))+'px';
+  setStatus(inRange?'in-range':'out-range',
+    inRange?`✅ 在 ${best.name} 範圍內`:
+    `⛔ 距 ${best?best.name:'最近基地'} 還差 ${Math.round(bestDist-(best?best.range:0))} m`);
+  updateAllButtons(new Date());
+}
+function onError(err){
+  const btn=document.getElementById('btnLocate');btn.disabled=false;btn.innerHTML='<span>🔍</span><span>重新偵測</span>';
+  const msgs={1:'已拒絕位置權限，請至瀏覽器設定開啟',2:'無法取得位置訊號',3:'定位逾時，請再試'};
+  setStatus('idle',msgs[err.code]||'定位失敗');showToast(msgs[err.code]||'定位失敗','error');
+}
+function resetRadar(){
+  document.getElementById('distanceDisplay').textContent='— m';
+  document.getElementById('distanceDisplay').className='distance-display';
+  document.getElementById('radarCenter').className='radar-center';
+  document.getElementById('radarCenter').textContent='🏥';
+  document.getElementById('userDot').style.display='none';
+  document.getElementById('baseNameDisplay').textContent='—';
+  document.getElementById('mainLoc').textContent='📍 尚未定位';
+  setStatus('idle','尚未定位，請點擊下方按鈕');
+  document.getElementById('btnLocate').disabled=false;
+  document.getElementById('btnLocate').innerHTML='<span>🔍</span><span>偵測我的位置</span>';
+}
+
+// ══════════════════════════════════
+//  CHECKIN BUTTONS
+// ══════════════════════════════════
+function getTodayRecordMap(){
+  const ds=dateStr(new Date());
+  const recs=getRecords().filter(r=>r.username===SESSION?.username&&r.date===ds);
+  const map={};recs.forEach(r=>map[r.key]=r);
+  return map;
+}
+const MAKEUP_GRACE=10;
+
+function updateAllButtons(now){
+  if(!SESSION)return;
+  const shift=getTodayShift();
+  const rmap=getTodayRecordMap();
+  const cur=now.getHours()*60+now.getMinutes();
+  const canClinic=!shift||shift==='off'||shift==='clinic'||shift==='both';
+  const canStation=!shift||shift==='off'||shift==='station'||shift==='both';
+  document.getElementById('tabClinic').classList.toggle('disabled',!canClinic);
+  document.getElementById('tabStation').classList.toggle('disabled',!canStation);
+  const cc=LOCATION_CONFIG.clinic;
+  updateBtn('ck_clinic_am_in',shift,'clinic',rmap,cur,cc.shifts.am,'am','in',false);
+  updateBtn('ck_clinic_am_out',shift,'clinic',rmap,cur,cc.shifts.am,'am','out',true);
+  updateBtn('ck_clinic_pm_in',shift,'clinic',rmap,cur,cc.shifts.pm,'pm','in',false);
+  updateBtn('ck_clinic_pm_out',shift,'clinic',rmap,cur,cc.shifts.pm,'pm','out',true);
+  const sc=LOCATION_CONFIG.station;
+  updateBtn('ck_station_in',shift,'station',rmap,cur,sc.shifts.full,'full','in',false);
+  updateBtn('ck_station_out',shift,'station',rmap,cur,sc.shifts.full,'full','out',true);
+}
+
+function updateBtn(id,shift,locType,rmap,cur,shiftCfg,shiftKey,dir,canMakeup){
+  const btn=document.getElementById(id);if(!btn)return;
+  const key=`${locType}_${shiftKey}_${dir}`;
+  const done=rmap[key];
+  const scheduled=!shift||shift==='off'||shift===locType||shift==='both';
+  const isIn=dir==='in';
+  const windowS=isIn?shiftCfg.inStart:shiftCfg.outStart;
+  const windowE=isIn?shiftCfg.inEnd:shiftCfg.outEnd;
+  const inW=inWindow(cur,windowS,windowE);
+  const inKey=`${locType}_${shiftKey}_in`;
+  const afterGrace=cur>toMin(windowE)+MAKEUP_GRACE;
+  const isMakeup=canMakeup&&!done&&rmap[inKey]&&afterGrace;
+  const labelText=isIn?'上班打卡':'下班打卡';
+  if(done){
+    btn.className='ck-btn done';
+    btn.innerHTML=`<div class="ck-label">✅ 已打卡</div><div class="ck-time">${done.recordTime}</div>`;return;
+  }
+  if(!scheduled){
+    btn.className='ck-btn no-shift';
+    btn.innerHTML=`<div class="ck-label">${labelText}</div><div class="ck-time">今日未排班</div>`;return;
+  }
+  if(isMakeup){
+    btn.className='ck-btn makeup';
+    btn.innerHTML=`<div class="ck-label">📝 補打${isIn?'上班':'下班'}</div><div class="ck-time">記錄 ${shiftCfg.makeupOut}</div>`;return;
+  }
+  if(inRange&&inW){
+    btn.className='ck-btn active';
+    btn.innerHTML=`<div class="ck-label">${labelText}</div><div class="ck-time">🌊 點擊打卡</div>`;return;
+  }
+  btn.className='ck-btn disabled';
+  btn.innerHTML=`<div class="ck-label">${labelText}</div><div class="ck-time">${windowS}–${windowE}</div>`;
+}
+
+// ══════════════════════════════════
+//  CHECKIN ACTION
+// ══════════════════════════════════
+async function doCheckin(locType,shiftKey,dir){
+  if(!SESSION)return;
+  const now=new Date();
+  const cfg=LOCATION_CONFIG[locType];
+  const shiftCfg=cfg.shifts[shiftKey];
+  const key=`${locType}_${shiftKey}_${dir}`;
+  const rmap=getTodayRecordMap();
+  const cur=now.getHours()*60+now.getMinutes();
+  const isIn=dir==='in';
+  const windowE=isIn?shiftCfg.inEnd:shiftCfg.outEnd;
+  const inKey=`${locType}_${shiftKey}_in`;
+  const afterGrace=cur>toMin(windowE)+MAKEUP_GRACE;
+  const isMakeup=!isIn&&!rmap[key]&&rmap[inKey]&&afterGrace;
+  const inW=inWindow(cur,isIn?shiftCfg.inStart:shiftCfg.outStart,windowE);
+
+  if(!isMakeup&&!inRange){showToast('不在基地範圍內','error');return}
+  if(!isMakeup&&!inW){showToast('非打卡時段','warn');return}
+
+  let recordTime=fmtTime(now);
+  if(isMakeup)recordTime=shiftCfg.makeupOut+':00';
+
+  const labels={
+    'clinic_am_in':'診所上午上班','clinic_am_out':'診所上午下班',
+    'clinic_pm_in':'診所下午上班','clinic_pm_out':'診所下午下班',
+    'station_full_in':'據點上班','station_full_out':'據點下班'
+  };
+
+  const record={
+    username:SESSION.username,display:SESSION.display,
+    key,label:labels[key]||key,locType,shiftKey,dir,isMakeup,
+    date:dateStr(now),
+    time:`${dateStr(now)} ${recordTime}`,
+    recordTime:recordTime.slice(0,5),
+    realTime:fmtDT(now),
+    dist:Math.round(currentDist||0),
+    base:nearBase?nearBase.name:'—',
+    lat:lastPos?lastPos.lat.toFixed(5):'',
+    lng:lastPos?lastPos.lng.toFixed(5):'',
+    ts:now.getTime()
+  };
+
+  // Save locally first
+  const records=getRecords();records.unshift(record);
+  if(records.length>500)records.pop();
+  saveRecords(records);
+  renderTodayRecords();
+  updateAllButtons(new Date());
+  showToast(`✅ ${labels[key]}${isMakeup?' (補打)':''}成功！`);
+
+  // Sync to GAS
+  setSyncStatus('syncing','同步中…');
+  try{
+    await gasPost({action:'saveRecord',...record});
+    setSyncStatus('ok','資料已與雲端同步');
+  }catch(e){
+    setSyncStatus('error','雲端同步失敗，資料已存本機');
+    showToast('雲端同步失敗，資料已存本機','warn');
+  }
+}
+
+// ══════════════════════════════════
+//  RECORDS RENDER
+// ══════════════════════════════════
+const KEY_ICONS={'clinic_am_in':'🟢','clinic_am_out':'🔵','clinic_pm_in':'🟠','clinic_pm_out':'🔴','station_full_in':'🟣','station_full_out':'⚫'};
+function renderTodayRecords(){
+  const ds=dateStr(new Date());
+  const mine=SESSION?getRecords().filter(r=>r.username===SESSION.username&&r.date===ds):[];
+  const el=document.getElementById('recordList');if(!el)return;
+  if(!mine.length){el.innerHTML='<div class="empty-records">🌊 今日尚無打卡紀錄</div>';return}
+  el.innerHTML=mine.map(r=>`
+    <div class="record-item">
+      <div class="record-icon">${KEY_ICONS[r.key]||'⚪'}</div>
+      <div style="flex:1">
+        <div class="record-name">${r.label}</div>
+        <div class="record-meta">${r.time}${r.isMakeup?' ⚠補打':''}</div>
+        <div class="record-meta">🏥 ${r.base}</div>
+      </div>
+      <div>
+        <span class="record-tag ${r.locType==='clinic'?'clinic':'station'}">${r.locType==='clinic'?'診所':'據點'}</span>
+        ${r.isMakeup?'<span class="record-tag makeup" style="display:block;margin-top:3px">補打</span>':''}
+      </div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════
+//  ADMIN — STAFF
+// ══════════════════════════════════
+function renderStaffList(){
+  document.getElementById('staffList').innerHTML=getStaff().map((s,i)=>`
+    <div class="staff-row">
+      <div class="sname">${s.display}<small style="color:var(--muted)"> (${s.username})</small></div>
+      <div class="srole">${s.role==='admin'?'管理員':'員工'}</div>
+      ${getStaff().length>1?`<button class="sbtn del" onclick="removeStaff(${i})">刪除</button>`:''}
+    </div>`).join('');
+}
+async function addStaff(){
+  const un=document.getElementById('newUsername').value.trim();
+  const pw=document.getElementById('newPassword').value;
+  const role=document.getElementById('newRole').value;
+  if(!un||!pw){showToast('請填寫帳號和密碼','warn');return}
+  if(pw.length<4){showToast('密碼至少4碼','warn');return}
+  const staff=getStaff();
+  if(staff.find(s=>s.username===un)){showToast('帳號已存在','warn');return}
+  staff.push({username:un,password:pw,display:un,role});
+  DB.set('chk_staff',staff);
+  document.getElementById('newUsername').value='';document.getElementById('newPassword').value='';
+  renderStaffList();buildLoginSelect();
+  showToast('☁ 同步中…','info');
+  await syncStaff();
+  showToast('✅ 帳號已新增並同步');
+}
+async function removeStaff(i){
+  const staff=getStaff();
+  if(staff[i].username===SESSION?.username){showToast('不可刪除自己','warn');return}
+  if(!confirm(`確定刪除「${staff[i].display}」？`))return;
+  staff.splice(i,1);DB.set('chk_staff',staff);
+  renderStaffList();buildLoginSelect();
+  await syncStaff();showToast('已刪除');
+}
+
+// ══════════════════════════════════
+//  ADMIN — BASES
+// ══════════════════════════════════
+function renderBaseList(){
+  const bases=getBases();
+  document.getElementById('baseList').innerHTML=bases.length?bases.map((b,i)=>`
+    <div class="base-row">
+      <div style="flex:1">
+        <div class="bname">${LOCATION_CONFIG[b.type]?.icon||'📍'} ${b.name}
+          <span style="font-size:10px;color:${b.type==='clinic'?'var(--sea)':'#7c5cbf'};margin-left:6px;font-weight:700">${b.type==='clinic'?'診所':'據點'}</span>
+        </div>
+        <div class="bcoord">緯度 ${b.lat}　經度 ${b.lng}　半徑 ${b.range}m</div>
+      </div>
+      <div style="display:flex;gap:5px;flex-shrink:0">
+        <button class="sbtn edit" onclick="openBaseEdit(${i})">編輯</button>
+        <button class="sbtn del" onclick="removeBase(${i})">刪除</button>
+      </div>
+    </div>`).join(''):'<div class="empty-records">尚無基地</div>';
+}
+
+function openBaseEdit(i){
+  const b=getBases()[i];
+  document.getElementById('editBaseIdx').value=i;
+  document.getElementById('editBaseName').value=b.name;
+  document.getElementById('editBaseType').value=b.type;
+  document.getElementById('editBaseLat').value=b.lat;
+  document.getElementById('editBaseLng').value=b.lng;
+  document.getElementById('editBaseRange').value=b.range;
+  document.getElementById('editBaseRangeVal').textContent=b.range+' m';
+  document.getElementById('baseEditModal').classList.add('show');
+}
+function closeBaseModal(){
+  document.getElementById('baseEditModal').classList.remove('show');
+}
+function useCurrentLocationEdit(){
+  if(!lastPos){showToast('請先在主畫面定位','warn');return}
+  document.getElementById('editBaseLat').value=lastPos.lat.toFixed(6);
+  document.getElementById('editBaseLng').value=lastPos.lng.toFixed(6);
+  showToast('✅ 已填入目前位置');
+}
+async function saveBaseEdit(){
+  const i=parseInt(document.getElementById('editBaseIdx').value);
+  const name=document.getElementById('editBaseName').value.trim();
+  const type=document.getElementById('editBaseType').value;
+  const lat=parseFloat(document.getElementById('editBaseLat').value);
+  const lng=parseFloat(document.getElementById('editBaseLng').value);
+  const range=parseInt(document.getElementById('editBaseRange').value);
+  if(!name||isNaN(lat)||isNaN(lng)){showToast('請填寫完整資料','warn');return}
+  const bases=getBases();
+  bases[i]={...bases[i],name,type,lat,lng,range};
+  DB.set('chk_bases',bases);
+  closeBaseModal();
+  renderBaseList();
+  await syncBases();
+  showToast('✅ 基地已更新並同步');
+}
+async function addBase(){
+  const name=document.getElementById('newBaseName').value.trim();
+  const type=document.getElementById('newBaseType').value;
+  const lat=parseFloat(document.getElementById('newBaseLat').value);
+  const lng=parseFloat(document.getElementById('newBaseLng').value);
+  const range=parseInt(document.getElementById('newBaseRange').value);
+  if(!name||isNaN(lat)||isNaN(lng)){showToast('請填寫名稱與座標','warn');return}
+  const bases=getBases();bases.push({id:'b'+Date.now(),name,type,lat,lng,range});DB.set('chk_bases',bases);
+  document.getElementById('newBaseName').value='';document.getElementById('newBaseLat').value='';document.getElementById('newBaseLng').value='';
+  renderBaseList();
+  await syncBases();showToast('✅ 基地已新增並同步');
+}
+async function removeBase(i){
+  const bases=getBases();if(!confirm(`確定刪除「${bases[i].name}」？`))return;
+  bases.splice(i,1);DB.set('chk_bases',bases);renderBaseList();
+  await syncBases();showToast('已刪除');
+}
+function useCurrentLocation(){
+  if(!lastPos){showToast('請先在主畫面定位','warn');return}
+  document.getElementById('newBaseLat').value=lastPos.lat.toFixed(6);
+  document.getElementById('newBaseLng').value=lastPos.lng.toFixed(6);
+  showToast('✅ 已填入目前位置');
+}
+
+// ══════════════════════════════════
+//  ADMIN — SCHEDULE
+// ══════════════════════════════════
+let calYear,calMonth;
+function buildSchedSelects(){
+  ['schedStaffSel','reportStaff'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    const isReport=id==='reportStaff';
+    el.innerHTML=isReport?'<option value="">全部員工</option>':'<option value="">— 選擇員工 —</option>';
+    getStaff().forEach(s=>{const o=document.createElement('option');o.value=s.username;o.textContent=s.display;el.appendChild(o)});
+  });
+}
+function loadSchedForStaff(){
+  const u=document.getElementById('schedStaffSel').value;
+  const ed=document.getElementById('schedEditor');
+  if(!u){ed.style.display='none';return}
+  ed.style.display='block';
+  const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();
+  renderCalHeader();renderCalendar();
+}
+function renderCalHeader(){
+  document.getElementById('calHeader').innerHTML=['日','一','二','三','四','五','六'].map((h,i)=>
+    `<div class="cal-head${i===0?' sun':i===6?' sat':''}">${h}</div>`).join('');
+}
+function renderCalendar(){
+  const u=document.getElementById('schedStaffSel').value;if(!u)return;
+  const sc=getSchedule(u);const wd=sc.workDays||{};
+  const now=new Date();const todayStr=dateStr(now);
+  document.getElementById('calMonthLabel').textContent=`${calYear} 年 ${calMonth+1} 月`;
+  const firstDay=new Date(calYear,calMonth,1).getDay();
+  const days=new Date(calYear,calMonth+1,0).getDate();
+  let html='';
+  for(let i=0;i<firstDay;i++)html+=`<div class="cal-cell empty"></div>`;
+  for(let d=1;d<=days;d++){
+    const ds=`${calYear}-${pad(calMonth+1)}-${pad(d)}`;
+    const dow=(firstDay+d-1)%7;
+    const val=wd[ds]||'off';
+    const cls=['cal-cell',ds===todayStr?'today':'',dow===0?'sun-col':dow===6?'sat-col':''].filter(Boolean).join(' ');
+    let pills='';
+    if(val==='clinic')pills=`<div class="cal-pill clinic">診所</div>`;
+    else if(val==='station')pills=`<div class="cal-pill station">據點</div>`;
+    else if(val==='both')pills=`<div class="cal-pill clinic">診所</div><div class="cal-pill station">據點</div>`;
+    else pills=`<div class="cal-pill off">休</div>`;
+    html+=`<div class="${cls}" onclick="calCycle('${ds}')"><div class="cal-cell-date">${d}</div>${pills}</div>`;
+  }
+  document.getElementById('schedCalendar').innerHTML=html;
+  const pfx=`${calYear}-${pad(calMonth+1)}-`;
+  const cDays=Object.entries(wd).filter(([k,v])=>k.startsWith(pfx)&&(v==='clinic'||v==='both')).length;
+  const sDays=Object.entries(wd).filter(([k,v])=>k.startsWith(pfx)&&(v==='station'||v==='both')).length;
+  document.getElementById('calSummary').textContent=`本月：診所 ${cDays} 天，據點 ${sDays} 天`;
+}
+function calCycle(ds){
+  const u=document.getElementById('schedStaffSel').value;if(!u)return;
+  const sc=getSchedule(u);const wd=sc.workDays||{};
+  const cycle={off:'clinic',clinic:'station',station:'both',both:'off'};
+  wd[ds]=cycle[wd[ds]||'off'];
+  sc.workDays=wd;saveScheduleLocal(u,sc);renderCalendar();
+}
+function calNav(dir){calMonth+=dir;if(calMonth>11){calMonth=0;calYear++}if(calMonth<0){calMonth=11;calYear--}renderCalendar()}
+function calFill(type){
+  const u=document.getElementById('schedStaffSel').value;if(!u)return;
+  const sc=getSchedule(u);const wd=sc.workDays||{};
+  const days=new Date(calYear,calMonth+1,0).getDate();
+  for(let d=1;d<=days;d++){
+    const dt=new Date(calYear,calMonth,d);
+    if(dt.getDay()>=1&&dt.getDay()<=5)wd[`${calYear}-${pad(calMonth+1)}-${pad(d)}`]=type;
+  }
+  sc.workDays=wd;saveScheduleLocal(u,sc);renderCalendar();
+}
+function calClear(){
+  const u=document.getElementById('schedStaffSel').value;if(!u)return;
+  if(!confirm(`確定清除 ${calYear}年${calMonth+1}月 排班？`))return;
+  const sc=getSchedule(u);const pfx=`${calYear}-${pad(calMonth+1)}-`;
+  sc.workDays=Object.fromEntries(Object.entries(sc.workDays||{}).filter(([k])=>!k.startsWith(pfx)));
+  saveScheduleLocal(u,sc);renderCalendar();
+}
+async function saveSchedule(){
+  const u=document.getElementById('schedStaffSel').value;if(!u){showToast('請先選擇員工','warn');return}
+  showToast('☁ 同步中…','info');
+  await syncSchedules();
+  showToast('✅ 班表已儲存至雲端');
+}
+
+// ══════════════════════════════════
+//  REPORT
+// ══════════════════════════════════
+async function renderReport(){
+  showLoading('載入報表…');
+  try{await loadRecords()}catch(e){}
+  hideLoading();
+
+  const sf=document.getElementById('reportStaff').value;
+  const mf=document.getElementById('reportMonth').value;
+  let recs=getRecords();
+  if(sf)recs=recs.filter(r=>r.username===sf);
+  if(mf)recs=recs.filter(r=>r.date&&r.date.startsWith(mf));
+
+  const grouped={};
+  recs.forEach(r=>{
+    const k=r.username+'|'+r.date;
+    if(!grouped[k])grouped[k]={display:r.display,username:r.username,date:r.date,recs:{}};
+    grouped[k].recs[r.key]=r;
+  });
+
+  if(mf){
+    const today=dateStr(new Date());
+    getStaff().filter(s=>!sf||s.username===sf).forEach(s=>{
+      const sc=getSchedule(s.username);
+      Object.entries(sc.workDays||{}).forEach(([ds,val])=>{
+        if(!ds.startsWith(mf)||val==='off'||ds>=today)return;
+        const k=s.username+'|'+ds;
+        if(!grouped[k])grouped[k]={display:s.display,username:s.username,date:ds,recs:{},scheduledShift:val};
+        else grouped[k].scheduledShift=val;
+      });
+    });
+  }
+
+  const rows=Object.values(grouped).sort((a,b)=>b.date.localeCompare(a.date));
+  if(!rows.length){document.getElementById('reportTable').innerHTML='<div class="empty-records">無符合紀錄</div>';return}
+
+  const COLS=[
+    {key:'clinic_am_in',label:'診所上午上班',locType:'clinic'},
+    {key:'clinic_am_out',label:'診所上午下班',locType:'clinic'},
+    {key:'clinic_pm_in',label:'診所下午上班',locType:'clinic'},
+    {key:'clinic_pm_out',label:'診所下午下班',locType:'clinic'},
+    {key:'station_full_in',label:'據點上班',locType:'station'},
+    {key:'station_full_out',label:'據點下班',locType:'station'},
+  ];
+
+  let html=`<table class="report-table"><thead><tr>
+    <th>姓名</th><th>日期</th>${COLS.map(c=>`<th>${c.label}</th>`).join('')}
+  </tr></thead><tbody>`;
+  rows.forEach(row=>{
+    const shift=row.scheduledShift||null;
+    html+=`<tr><td style="font-weight:700;color:var(--sea)">${row.display}</td>
+      <td class="mono" style="color:var(--muted)">${row.date}</td>
+      ${COLS.map(c=>{
+        const r=row.recs[c.key];
+        if(r)return`<td class="mono" style="color:${r.isMakeup?'#c06000':'var(--text)'}">${r.recordTime}${r.isMakeup?'<span class="makeup-mark">補打</span>':''}</td>`;
+        const relevant=(shift==='both')||(shift===c.locType);
+        if(relevant&&row.scheduledShift)return`<td><span class="missing-mark">⚠ 缺失</span></td>`;
+        return`<td style="color:#ccc">—</td>`;
+      }).join('')}
+    </tr>`;
+  });
+  html+='</tbody></table>';
+  document.getElementById('reportTable').innerHTML=html;
+}
+
+function exportCSV(){
+  const sf=document.getElementById('reportStaff').value;
+  const mf=document.getElementById('reportMonth').value;
+  let recs=getRecords();
+  if(sf)recs=recs.filter(r=>r.username===sf);
+  if(mf)recs=recs.filter(r=>r.date&&r.date.startsWith(mf));
+  if(!recs.length){showToast('無資料可匯出','warn');return}
+  const grouped={};
+  recs.forEach(r=>{const k=r.username+'|'+r.date;if(!grouped[k])grouped[k]={display:r.display,date:r.date,recs:{}};grouped[k].recs[r.key]=r});
+  const rows=Object.values(grouped).sort((a,b)=>b.date.localeCompare(a.date));
+  const KEYS=['clinic_am_in','clinic_am_out','clinic_pm_in','clinic_pm_out','station_full_in','station_full_out'];
+  const LABELS=['診所上午上班','診所上午下班','診所下午上班','診所下午下班','據點上班','據點下班'];
+  let csv='\uFEFF姓名,日期,'+LABELS.join(',')+',備註\n';
+  rows.forEach(row=>{
+    const cells=[row.display,row.date];
+    const notes=[];
+    KEYS.forEach(k=>{const r=row.recs[k];cells.push(r?r.recordTime:'');if(r?.isMakeup)notes.push(LABELS[KEYS.indexOf(k)]+'補打')});
+    cells.push(notes.join('；'));
+    csv+=cells.join(',')+'\n';
+  });
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download=`出勤報表_${mf||'全部'}.csv`;a.click();
+  showToast('✅ 已匯出 CSV');
+}
+
+// ══════════════════════════════════
+//  ADMIN TABS
+// ══════════════════════════════════
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(btn)btn.classList.add('active');
+}
+function renderAdminAll(){
+  renderStaffList();renderBaseList();buildSchedSelects();
+  const now=new Date();
+  document.getElementById('reportMonth').value=`${now.getFullYear()}-${pad(now.getMonth()+1)}`;
+}
+
+// ══════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════
+function haversine(lat1,lon1,lat2,lon2){
+  const R=6371000,φ1=lat1*Math.PI/180,φ2=lat2*Math.PI/180;
+  const Δφ=(lat2-lat1)*Math.PI/180,Δλ=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(Δφ/2)**2+Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function getBearing(lat1,lon1,lat2,lon2){
+  const φ1=lat1*Math.PI/180,φ2=lat2*Math.PI/180,Δλ=(lon2-lon1)*Math.PI/180;
+  const y=Math.sin(Δλ)*Math.cos(φ2),x=Math.cos(φ1)*Math.sin(φ2)-Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
+  return(Math.atan2(y,x)*180/Math.PI+360)%360;
+}
+function setStatus(cls,text){
+  document.getElementById('statusBar').className='status-bar '+(cls==='idle'?'':cls);
+  document.getElementById('statusText').textContent=text;
+}
+function showToast(msg,type='ok'){
+  const t=document.getElementById('toast');t.textContent=msg;
+  t.className='toast show'+(type==='error'?' error':type==='warn'?' warn':type==='info'?' info':'');
+  clearTimeout(t._tid);t._tid=setTimeout(()=>t.classList.remove('show'),3200);
+}
+</script>
+</body>
+</html>
