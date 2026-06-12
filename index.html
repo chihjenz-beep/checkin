@@ -203,9 +203,11 @@ select option{background:#fff;color:var(--text)}
 .record-name{font-size:13px;font-weight:900;color:var(--sea)}
 .record-meta{font-size:11px;color:var(--muted);font-family:'Nunito',sans-serif;font-weight:700;line-height:1.6}
 .record-tag{font-size:10px;padding:2px 8px;border-radius:20px;display:inline-block;margin-top:3px;font-weight:700}
-.record-tag.makeup{background:rgba(255,149,0,.15);color:#c06000}
+.record-tag.late{background:rgba(255,71,87,.15);color:var(--coral2)}
 .record-tag.clinic{background:rgba(0,153,204,.12);color:var(--sea)}
 .record-tag.station{background:rgba(124,92,191,.12);color:#7c5cbf}
+.ck-btn.late{border-color:var(--coral2);color:var(--coral2);background:rgba(255,71,87,.07)}
+.ck-btn.late .ck-time{color:var(--coral2)}
 .empty-records{color:var(--muted);font-size:13px;text-align:center;padding:16px 0;font-weight:700}
 
 /* === ADMIN === */
@@ -396,12 +398,12 @@ select option{background:#fff;color:var(--text)}
           <div class="ck-row">
             <div><div class="ck-col-label">上班</div>
               <button class="ck-btn" id="ck_clinic_am_in" onclick="doCheckin('clinic','am','in')">
-                <div class="ck-label">上班打卡</div><div class="ck-time">07:30–08:30</div>
+                <div class="ck-label">上班打卡</div><div class="ck-time">07:50–08:00</div>
               </button>
             </div>
             <div><div class="ck-col-label">下班</div>
               <button class="ck-btn" id="ck_clinic_am_out" onclick="doCheckin('clinic','am','out')">
-                <div class="ck-label">下班打卡</div><div class="ck-time">11:30–12:30</div>
+                <div class="ck-label">下班打卡</div><div class="ck-time">12:00 後</div>
               </button>
             </div>
           </div>
@@ -411,12 +413,12 @@ select option{background:#fff;color:var(--text)}
           <div class="ck-row">
             <div><div class="ck-col-label">上班</div>
               <button class="ck-btn" id="ck_clinic_pm_in" onclick="doCheckin('clinic','pm','in')">
-                <div class="ck-label">上班打卡</div><div class="ck-time">13:30–14:30</div>
+                <div class="ck-label">上班打卡</div><div class="ck-time">13:50–14:00</div>
               </button>
             </div>
             <div><div class="ck-col-label">下班</div>
               <button class="ck-btn" id="ck_clinic_pm_out" onclick="doCheckin('clinic','pm','out')">
-                <div class="ck-label">下班打卡</div><div class="ck-time">17:30–18:30</div>
+                <div class="ck-label">下班打卡</div><div class="ck-time">18:00 後</div>
               </button>
             </div>
           </div>
@@ -429,12 +431,12 @@ select option{background:#fff;color:var(--text)}
           <div class="ck-row">
             <div><div class="ck-col-label">上班</div>
               <button class="ck-btn" id="ck_station_in" onclick="doCheckin('station','full','in')">
-                <div class="ck-label">上班打卡</div><div class="ck-time">07:30–08:30</div>
+                <div class="ck-label">上班打卡</div><div class="ck-time">07:50–08:00</div>
               </button>
             </div>
             <div><div class="ck-col-label">下班</div>
               <button class="ck-btn" id="ck_station_out" onclick="doCheckin('station','full','out')">
-                <div class="ck-label">下班打卡</div><div class="ck-time">16:00–17:00</div>
+                <div class="ck-label">下班打卡</div><div class="ck-time">16:30 後</div>
               </button>
             </div>
           </div>
@@ -611,14 +613,20 @@ const LOCATION_CONFIG={
   clinic:{
     label:'診所',icon:'🏥',color:'var(--sea)',
     shifts:{
-      am:{label:'上午班',inStart:'07:30',inEnd:'08:30',outStart:'11:30',outEnd:'12:30',makeupOut:'12:15'},
-      pm:{label:'下午班',inStart:'13:30',inEnd:'14:30',outStart:'17:30',outEnd:'18:30',makeupOut:'18:30'}
+      am:{label:'上午班',
+        inEarly:'07:50', inOnTime:'08:00', inLateEnd:'11:59',
+        outStart:'12:00', outEnd:'12:30', makeupOut:'12:15'},
+      pm:{label:'下午班',
+        inEarly:'13:50', inOnTime:'14:00', inLateEnd:'17:59',
+        outStart:'18:00', outEnd:'18:30', makeupOut:'18:30'}
     }
   },
   station:{
     label:'據點',icon:'🏠',color:'#7c5cbf',
     shifts:{
-      full:{label:'全天班',inStart:'07:30',inEnd:'08:30',outStart:'16:00',outEnd:'17:00',makeupOut:'16:45'}
+      full:{label:'全天班',
+        inEarly:'07:50', inOnTime:'08:00', inLateEnd:'16:29',
+        outStart:'16:30', outEnd:'17:00', makeupOut:'16:45'}
     }
   }
 };
@@ -983,31 +991,48 @@ function updateBtn(id,shift,locType,rmap,cur,shiftCfg,shiftKey,dir,canMakeup){
   const done=rmap[key];
   const scheduled=!shift||shift==='off'||shift===locType||shift==='both';
   const isIn=dir==='in';
-  const windowS=isIn?shiftCfg.inStart:shiftCfg.outStart;
-  const windowE=isIn?shiftCfg.inEnd:shiftCfg.outEnd;
-  const inW=inWindow(cur,windowS,windowE);
-  const inKey=`${locType}_${shiftKey}_in`;
-  const afterGrace=cur>toMin(windowE)+MAKEUP_GRACE;
-  const isMakeup=canMakeup&&!done&&rmap[inKey]&&afterGrace;
-  const labelText=isIn?'上班打卡':'下班打卡';
+
   if(done){
+    let timeLabel=done.recordTime;
+    let lateTag=done.isLate?'<div class="ck-time" style="color:var(--coral2)">⚠ 遲到</div>':'';
     btn.className='ck-btn done';
-    btn.innerHTML=`<div class="ck-label">✅ 已打卡</div><div class="ck-time">${done.recordTime}</div>`;return;
+    btn.innerHTML=`<div class="ck-label">✅ 已打卡</div><div class="ck-time">${timeLabel}</div>${lateTag}`;
+    return;
   }
   if(!scheduled){
     btn.className='ck-btn no-shift';
-    btn.innerHTML=`<div class="ck-label">${labelText}</div><div class="ck-time">今日未排班</div>`;return;
+    btn.innerHTML=`<div class="ck-label">${isIn?'上班':'下班'}打卡</div><div class="ck-time">今日未排班</div>`;
+    return;
   }
-  if(isMakeup){
-    btn.className='ck-btn makeup';
-    btn.innerHTML=`<div class="ck-label">📝 補打${isIn?'上班':'下班'}</div><div class="ck-time">記錄 ${shiftCfg.makeupOut}</div>`;return;
+
+  if(isIn){
+    // Can punch in: from inEarly until inLateEnd (before outStart)
+    const canIn=cur>=toMin(shiftCfg.inEarly)&&cur<=toMin(shiftCfg.inLateEnd);
+    const isLate=cur>toMin(shiftCfg.inOnTime);
+    if(canIn&&inRange){
+      btn.className='ck-btn '+(isLate?'late':'active');
+      btn.innerHTML=`<div class="ck-label">${isLate?'⚠ 遲到打卡':'上班打卡'}</div><div class="ck-time">${isLate?'已超過'+shiftCfg.inOnTime:'🌊 點擊打卡'}</div>`;
+    } else {
+      btn.className='ck-btn disabled';
+      btn.innerHTML=`<div class="ck-label">上班打卡</div><div class="ck-time">${cur<toMin(shiftCfg.inEarly)?shiftCfg.inEarly+'前無法打卡':'非上班時段'}</div>`;
+    }
+  } else {
+    // Out: can punch after outStart; makeup after outEnd+10min
+    const inKey=`${locType}_${shiftKey}_in`;
+    const canOut=cur>=toMin(shiftCfg.outStart);
+    const afterGrace=cur>toMin(shiftCfg.outEnd)+MAKEUP_GRACE;
+    const isMakeup=canMakeup&&!done&&rmap[inKey]&&afterGrace;
+    if(isMakeup){
+      btn.className='ck-btn makeup';
+      btn.innerHTML=`<div class="ck-label">📝 補打下班</div><div class="ck-time">記錄 ${shiftCfg.makeupOut}</div>`;
+    } else if(canOut&&inRange){
+      btn.className='ck-btn active';
+      btn.innerHTML=`<div class="ck-label">下班打卡</div><div class="ck-time">🌊 點擊打卡</div>`;
+    } else {
+      btn.className='ck-btn disabled';
+      btn.innerHTML=`<div class="ck-label">下班打卡</div><div class="ck-time">${shiftCfg.outStart} 後開放</div>`;
+    }
   }
-  if(inRange&&inW){
-    btn.className='ck-btn active';
-    btn.innerHTML=`<div class="ck-label">${labelText}</div><div class="ck-time">🌊 點擊打卡</div>`;return;
-  }
-  btn.className='ck-btn disabled';
-  btn.innerHTML=`<div class="ck-label">${labelText}</div><div class="ck-time">${windowS}–${windowE}</div>`;
 }
 
 // ══════════════════════════════════
@@ -1022,17 +1047,25 @@ async function doCheckin(locType,shiftKey,dir){
   const rmap=getTodayRecordMap();
   const cur=now.getHours()*60+now.getMinutes();
   const isIn=dir==='in';
-  const windowE=isIn?shiftCfg.inEnd:shiftCfg.outEnd;
   const inKey=`${locType}_${shiftKey}_in`;
-  const afterGrace=cur>toMin(windowE)+MAKEUP_GRACE;
-  const isMakeup=!isIn&&!rmap[key]&&rmap[inKey]&&afterGrace;
-  const inW=inWindow(cur,isIn?shiftCfg.inStart:shiftCfg.outStart,windowE);
 
-  if(!isMakeup&&!inRange){showToast('不在基地範圍內','error');return}
-  if(!isMakeup&&!inW){showToast('非打卡時段','warn');return}
-
+  let isMakeup=false,isLate=false;
   let recordTime=fmtTime(now);
-  if(isMakeup)recordTime=shiftCfg.makeupOut+':00';
+
+  if(isIn){
+    if(!inRange){showToast('不在基地範圍內','error');return}
+    if(cur<toMin(shiftCfg.inEarly)){showToast(`${shiftCfg.inEarly} 前無法打卡`,'warn');return}
+    if(cur>toMin(shiftCfg.inLateEnd)){showToast('已超過可打卡時段','warn');return}
+    isLate=cur>toMin(shiftCfg.inOnTime);
+  } else {
+    const afterGrace=cur>toMin(shiftCfg.outEnd)+MAKEUP_GRACE;
+    isMakeup=!rmap[key]&&rmap[inKey]&&afterGrace;
+    if(!isMakeup){
+      if(!inRange){showToast('不在基地範圍內','error');return}
+      if(cur<toMin(shiftCfg.outStart)){showToast(`${shiftCfg.outStart} 後才能下班打卡`,'warn');return}
+    }
+    if(isMakeup)recordTime=shiftCfg.makeupOut+':00';
+  }
 
   const labels={
     'clinic_am_in':'診所上午上班','clinic_am_out':'診所上午下班',
@@ -1042,7 +1075,8 @@ async function doCheckin(locType,shiftKey,dir){
 
   const record={
     username:SESSION.username,display:SESSION.display,
-    key,label:labels[key]||key,locType,shiftKey,dir,isMakeup,
+    key,label:labels[key]||key,locType,shiftKey,dir,
+    isMakeup,isLate,
     date:dateStr(now),
     time:`${dateStr(now)} ${recordTime}`,
     recordTime:recordTime.slice(0,5),
@@ -1054,15 +1088,17 @@ async function doCheckin(locType,shiftKey,dir){
     ts:now.getTime()
   };
 
-  // Save locally first
   const records=getRecords();records.unshift(record);
   if(records.length>500)records.pop();
   saveRecords(records);
   renderTodayRecords();
   updateAllButtons(new Date());
-  showToast(`✅ ${labels[key]}${isMakeup?' (補打)':''}成功！`);
 
-  // Sync to GAS
+  let msg=`✅ ${labels[key]}成功！`;
+  if(isLate)msg+=' ⚠ 遲到';
+  if(isMakeup)msg+=' 📝 補打';
+  showToast(msg,isLate?'warn':'ok');
+
   setSyncStatus('syncing','同步中…');
   try{
     await gasPost({action:'saveRecord',...record});
@@ -1087,12 +1123,13 @@ function renderTodayRecords(){
       <div class="record-icon">${KEY_ICONS[r.key]||'⚪'}</div>
       <div style="flex:1">
         <div class="record-name">${r.label}</div>
-        <div class="record-meta">${r.time}${r.isMakeup?' ⚠補打':''}</div>
+        <div class="record-meta">${r.time}</div>
         <div class="record-meta">🏥 ${r.base}</div>
       </div>
-      <div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
         <span class="record-tag ${r.locType==='clinic'?'clinic':'station'}">${r.locType==='clinic'?'診所':'據點'}</span>
-        ${r.isMakeup?'<span class="record-tag makeup" style="display:block;margin-top:3px">補打</span>':''}
+        ${r.isLate?'<span class="record-tag late">⚠ 遲到</span>':''}
+        ${r.isMakeup?'<span class="record-tag makeup">📝 補打</span>':''}
       </div>
     </div>`).join('');
 }
@@ -1351,7 +1388,7 @@ async function renderReport(){
       <td class="mono" style="color:var(--muted)">${row.date}</td>
       ${COLS.map(c=>{
         const r=row.recs[c.key];
-        if(r)return`<td class="mono" style="color:${r.isMakeup?'#c06000':'var(--text)'}">${r.recordTime}${r.isMakeup?'<span class="makeup-mark">補打</span>':''}</td>`;
+        if(r)return`<td class="mono" style="color:${r.isLate?'var(--coral2)':r.isMakeup?'#c06000':'var(--text)'}">${r.recordTime}${r.isLate?'<span class="makeup-mark" style="color:var(--coral2)">⚠遲到</span>':''}${r.isMakeup?'<span class="makeup-mark">📝補打</span>':''}</td>`;
         const relevant=(shift==='both')||(shift===c.locType);
         if(relevant&&row.scheduledShift)return`<td><span class="missing-mark">⚠ 缺失</span></td>`;
         return`<td style="color:#ccc">—</td>`;
