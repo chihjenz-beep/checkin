@@ -745,7 +745,25 @@ async function syncBases(){
 async function loadRecords(){
   try{
     const r=await gasGet({action:'getRecords'});
-    if(r.ok){DB.set('chk_records',r.records);return r.records}
+    if(r.ok){
+      // Fix dates that GAS returns as UTC Date objects (e.g. "2026-06-12T16:00:00.000Z")
+      const fixed=r.records.map(rec=>{
+        let d=rec.date;
+        if(d&&String(d).includes('T')){
+          // Parse as local date string only (ignore time part, use the date stored in sheet)
+          const parts=String(d).split('T')[0];
+          d=parts;
+        }
+        // Also fix time field if it contains ISO format
+        let t=rec.time;
+        if(t&&String(t).includes('T')){
+          const dt=new Date(t);
+          t=fmtDT(dt);
+        }
+        return{...rec,date:d,time:t||rec.time};
+      });
+      DB.set('chk_records',fixed);return fixed;
+    }
   }catch(e){}
   return DB.get('chk_records',[]);
 }
